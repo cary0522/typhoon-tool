@@ -11,15 +11,28 @@
 
 請先將 `.env.example` 複製成 `.env`，並填入 `NUXT_DISCORD_WEBHOOK_URL`。Webhook URL 僅放在伺服器環境變數，不要提交到 git。
 
-### 自動通知排程
+### Vercel 自動通知排程
 
-Nuxt/Nitro 伺服器啟動後會建立排程，每週一至週五台灣時間 08:30 執行一次：
+Vercel 會依 [vercel.json](vercel.json) 的設定，每週一至週五執行 `/api/cron/typhoon`。Cron 使用 UTC 時間 `00:30`，換算為台灣時間就是 08:30：
 
 1. 抓取 `/api/typhoon` 使用的 DGPA 資料來源。
 2. 檢查所有縣市的 `work` 是否包含 `停止上班`。
 3. 只有符合條件時，才將台中市與台南市送到 Discord。
 
-這是伺服器程序內的排程，因此部署環境必須保持 Nuxt server 持續運行；若使用會自動休眠或無狀態的 serverless 平台，請改用平台的 Cron Job 呼叫 `POST /api/typhoon-notify`，並由平台負責週一至週五 08:30（Asia/Taipei）觸發。
+請在 Vercel Project Settings > Environment Variables 設定：
+
+```env
+NUXT_DISCORD_WEBHOOK_URL=...
+NUXT_DGPA_URL=https://www.dgpa.gov.tw/typh/daily/nds.html
+NUXT_CRON_SECRET=...
+CRON_SECRET=...
+NUXT_DISCORD_APPLICATION_ID=...
+NUXT_DISCORD_PUBLIC_KEY=...
+NUXT_DISCORD_BOT_TOKEN=...
+NUXT_DISCORD_GUILD_ID=...
+```
+
+`NUXT_CRON_SECRET` 與 `CRON_SECRET` 請設定為相同的隨機長字串；Vercel Cron 會以 `CRON_SECRET` 自動加入 `Authorization: Bearer <secret>` header。手動呼叫 `/api/cron/typhoon` 時也必須帶相同 header。修改環境變數後請重新部署。
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 

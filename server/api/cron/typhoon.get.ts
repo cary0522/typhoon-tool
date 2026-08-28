@@ -1,0 +1,40 @@
+import { createError, defineEventHandler, getHeader } from 'h3'
+import { fetchTyphoonReport, hasWorkSuspension, sendTyphoonNotification } from '../../utils/typhoon'
+
+export default defineEventHandler(async (event) => {
+    const config = useRuntimeConfig(event)
+    const cronSecret = String(config.cronSecret || process.env.CRON_SECRET || '')
+    const authorization = getHeader(event, 'authorization') || ''
+
+    if (!cronSecret || authorization !== `Bearer ${cronSecret}`) {
+        throw createError({ statusCode: 401, statusMessage: '未授權的 Cron 請求' })
+    }
+
+    const webhookUrl = String(config.discordWebhookUrl || '')
+    if (!webhookUrl) {
+        throw createError({ statusCode: 500, statusMessage: '尚未設定 Discord webhook' })
+    }
+
+    const source = String(config.dgpaUrl || 'https://www.dgpa.gov.tw/typh/daily/nds.html')
+    const report = await fetchTyphoonReport(source).catch(() => null)
+    if (!report) {
+        throw createError({ statusCode: 502, statusMessage: '無法取得停班停課資料' })
+    }
+
+    // 測試期間暫時每次都發送狀態通知；測試完成後恢復以下條件即可。
+    // if (!hasWorkSuspension(report)) {
+    //     return {
+    //         ok: true,
+    //         notified: false,
+    //         reason: '沒有停止上班資訊',
+    //         checkedAt: new Date().toISOString()
+    //     }
+    // }
+
+    const notification = await sendTyphoonNotification(report, webhookUrl).catch(() => null)
+    if (!notification) {
+        throw createError({ statusCode: 502, statusMessage: 'Discord webhook 傳送失敗' })
+    }
+
+    return { ok: true, notified: true, ...notification }
+})

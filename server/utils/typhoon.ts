@@ -92,7 +92,10 @@ export function parseTyphoonHtml(html: string, source = DGPA_URL): TyphoonReport
         const cityMatch = rowText.match(cityPattern)
         if (!cityMatch) continue
 
-        const city = normalizeCity(cityMatch[1])
+        const cityName = cityMatch[1]
+        if (!cityName) continue
+
+        const city = normalizeCity(cityName)
         const status = statusFromText(city, rowText.slice(cityMatch.index! + cityMatch[0].length))
         if (status) statuses.set(city, status)
     }
@@ -158,4 +161,8 @@ export async function sendTyphoonNotification(report: TyphoonReport, webhookUrl:
     }
 
     return { content, sentAt: new Date().toISOString() }
+}
+
+export function hasWorkSuspension(report: TyphoonReport) {
+    return report.statuses.some((status) => status.work.includes('停止上班'))
 }
