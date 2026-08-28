@@ -5,5 +5,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     discordWebhookUrl: '',
     dgpaUrl: '',
+    discordApplicationId: '',
+    discordPublicKey: '',
+    discordBotToken: '',
+    discordGuildId: ''
   }
 })
