@@ -8,7 +8,7 @@ import {
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
-    const cronSecret = String(config.cronSecret || process.env.CRON_SECRET || '')
+    const cronSecret = String(config.cronSecret || '')
     const authorization = getHeader(event, 'authorization') || ''
 
     if (!cronSecret || authorization !== `Bearer ${cronSecret}`) {
