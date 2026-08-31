@@ -2,14 +2,15 @@
 
 ## 天然災害 API
 
-本專案提供兩個 server API，不需要額外安裝套件：
+本專案提供三個 server API，不需要額外安裝套件：
 
 - `GET /api/typhoon`：抓取行政院人事行政總處頁面，回傳整理後的 JSON。
 - `POST /api/typhoon-notify`：抓取最新資料，篩選台中市與台南市後送到 Discord webhook。
+- `POST /api/typhoon-notify-bot`：抓取最新資料，使用 Discord Bot 傳送到指定頻道 ID。
 
 回傳的 `statuses` 每筆包含 `city`、`work`、`school` 與 `summary`，例如 `台中市:正常上班、正常上課`。
 
-請先將 `.env.example` 複製成 `.env`，並填入 `NUXT_DISCORD_WEBHOOK_URL`。Webhook URL 僅放在伺服器環境變數，不要提交到 git。
+請先將 `.env.example` 複製成 `.env`，並填入 webhook 或 Bot 的設定。Webhook URL 與 Bot Token 僅放在伺服器環境變數，不要提交到 git。
 
 ### Vercel 自動通知排程
 
@@ -17,7 +18,7 @@ Vercel 會依 [vercel.json](vercel.json) 的設定，每週一至週五執行 `/
 
 1. 抓取 `/api/typhoon` 使用的 DGPA 資料來源。
 2. 檢查所有縣市的 `work` 是否包含 `停止上班`。
-3. 只有符合條件時，才將台中市與台南市送到 Discord。
+3. 只有符合條件時，才將台中市與台南市送到已設定的 Discord webhook 及 Bot 頻道。
 
 請在 Vercel Project Settings > Environment Variables 設定：
 
@@ -29,6 +30,7 @@ CRON_SECRET=...
 NUXT_DISCORD_APPLICATION_ID=...
 NUXT_DISCORD_PUBLIC_KEY=...
 NUXT_DISCORD_BOT_TOKEN=...
+NUXT_DISCORD_CHANNEL_ID=...
 NUXT_DISCORD_GUILD_ID=...
 ```
 

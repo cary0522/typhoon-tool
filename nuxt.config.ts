@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     discordApplicationId: '',
     discordPublicKey: '',
     discordBotToken: '',
+    discordChannelId: '',
     discordGuildId: ''
   }
 })

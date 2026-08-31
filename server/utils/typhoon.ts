@@ -148,8 +148,12 @@ export async function fetchTyphoonReport(source = DGPA_URL) {
     return parseTyphoonHtml(await response.text(), source)
 }
 
+function getNotificationContent(report: TyphoonReport) {
+    return getTargetStatuses(report).map((status) => status.summary).join('\n')
+}
+
 export async function sendTyphoonNotification(report: TyphoonReport, webhookUrl: string) {
-    const content = getTargetStatuses(report).map((status) => status.summary).join('\n')
+    const content = getNotificationContent(report)
     const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -158,6 +162,24 @@ export async function sendTyphoonNotification(report: TyphoonReport, webhookUrl:
 
     if (!response.ok) {
         throw new Error(`Discord webhook request failed with status ${response.status}`)
+    }
+
+    return { content, sentAt: new Date().toISOString() }
+}
+
+export async function sendTyphoonBotNotification(report: TyphoonReport, botToken: string, channelId: string) {
+    const content = getNotificationContent(report)
+    const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bot ${botToken}`,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+    })
+
+    if (!response.ok) {
+        throw new Error(`Discord bot request failed with status ${response.status}`)
     }
 
     return { content, sentAt: new Date().toISOString() }

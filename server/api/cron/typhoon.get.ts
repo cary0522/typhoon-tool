@@ -1,5 +1,10 @@
 import { createError, defineEventHandler, getHeader } from 'h3'
-import { fetchTyphoonReport, hasWorkSuspension, sendTyphoonNotification } from '../../utils/typhoon'
+import {
+    fetchTyphoonReport,
+    hasWorkSuspension,
+    sendTyphoonBotNotification,
+    sendTyphoonNotification
+} from '../../utils/typhoon'
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
@@ -11,8 +16,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const webhookUrl = String(config.discordWebhookUrl || '')
-    if (!webhookUrl) {
-        throw createError({ statusCode: 500, statusMessage: '尚未設定 Discord webhook' })
+    const botToken = String(config.discordBotToken || '')
+    const channelId = String(config.discordChannelId || '')
+    if (!webhookUrl && !(botToken && channelId)) {
+        throw createError({ statusCode: 500, statusMessage: '尚未設定 Discord webhook 或 Bot Token 與頻道 ID' })
     }
 
     const source = String(config.dgpaUrl || 'https://www.dgpa.gov.tw/typh/daily/nds.html')
@@ -31,10 +38,23 @@ export default defineEventHandler(async (event) => {
     //     }
     // }
 
-    const notification = await sendTyphoonNotification(report, webhookUrl).catch(() => null)
-    if (!notification) {
-        throw createError({ statusCode: 502, statusMessage: 'Discord webhook 傳送失敗' })
+    const notifications = []
+
+    if (webhookUrl) {
+        const notification = await sendTyphoonNotification(report, webhookUrl).catch(() => null)
+        if (!notification) {
+            throw createError({ statusCode: 502, statusMessage: 'Discord webhook 傳送失敗' })
+        }
+        notifications.push({ destination: 'webhook', ...notification })
     }
 
-    return { ok: true, notified: true, ...notification }
+    if (botToken && channelId) {
+        const notification = await sendTyphoonBotNotification(report, botToken, channelId).catch(() => null)
+        if (!notification) {
+            throw createError({ statusCode: 502, statusMessage: 'Discord Bot 傳送失敗' })
+        }
+        notifications.push({ destination: 'bot', ...notification })
+    }
+
+    return { ok: true, notified: true, notifications }
 })
