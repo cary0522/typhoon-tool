@@ -28,15 +28,14 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 502, statusMessage: '無法取得停班停課資料' })
     }
 
-    // 測試期間暫時每次都發送狀態通知；測試完成後恢復以下條件即可。
-    // if (!hasWorkSuspension(report)) {
-    //     return {
-    //         ok: true,
-    //         notified: false,
-    //         reason: '沒有停止上班資訊',
-    //         checkedAt: new Date().toISOString()
-    //     }
-    // }
+    if (!hasWorkSuspension(report)) {
+        return {
+            ok: true,
+            notified: false,
+            reason: '沒有停止上班資訊',
+            checkedAt: new Date().toISOString()
+        }
+    }
 
     const notifications = []
 
